@@ -4,26 +4,31 @@ import API from "../api";
 
 export default function Login(){
 
-const [email,setEmail]=useState("");
-const [password,setPassword]=useState("");
-
 const navigate = useNavigate();
 
-const login = async()=>{
+const [email,setEmail] = useState("");
+const [password,setPassword] = useState("");
+
+const handleSubmit = async(e)=>{
+
+e.preventDefault();
 
 try{
 
-const res = await API.post("/auth/login",{email,password});
+const res = await API.post("/auth/login",{
+email,
+password
+});
 
-localStorage.setItem("token",res.data.token);
+alert(res.data.message);
+
 localStorage.setItem("userId",res.data.userId);
 
 navigate("/dashboard");
 
-}
-catch(err){
+}catch(err){
 
-alert(err.response?.data || "Login failed");
+alert(err.response?.data?.message || "Login failed");
 
 }
 
@@ -31,28 +36,37 @@ alert(err.response?.data || "Login failed");
 
 return(
 
-<div style={page}>
+<div style={styles.page}>
 
-<div style={card}>
+<h1 style={styles.title}>🏦 Rural Wallet</h1>
 
-<h2>Login</h2>
+<div style={styles.card}>
+
+<h2 style={styles.heading}>Login</h2>
+
+<form onSubmit={handleSubmit} style={styles.form}>
 
 <input
-placeholder="Email"
+type="email"
+placeholder="Enter Email"
+value={email}
 onChange={(e)=>setEmail(e.target.value)}
-style={input}
+style={styles.input}
 />
 
 <input
 type="password"
-placeholder="Password"
+placeholder="Enter Password"
+value={password}
 onChange={(e)=>setPassword(e.target.value)}
-style={input}
+style={styles.input}
 />
 
-<button style={btn} onClick={login}>
+<button style={styles.button}>
 Login
 </button>
+
+</form>
 
 </div>
 
@@ -62,33 +76,60 @@ Login
 
 }
 
-const page={
-height:"90vh",
-display:"flex",
-justifyContent:"center",
-alignItems:"center",
-backgroundImage:"url(https://images.unsplash.com/photo-1601597111158-2fceff292cdc)",
-backgroundSize:"cover"
-};
+/* ---------- Styles ---------- */
 
-const card={
+const styles={
+
+page:{
+height:"100vh",
+display:"flex",
+flexDirection:"column",
+alignItems:"center",
+justifyContent:"center",
+background:"#f4f6fb",
+fontFamily:"Arial"
+},
+
+title:{
+color:"#1e3a8a",
+marginBottom:"20px"
+},
+
+card:{
 background:"white",
 padding:"40px",
 borderRadius:"10px",
-width:"300px"
-};
+width:"350px",
+boxShadow:"0px 6px 20px rgba(0,0,0,0.15)"
+},
 
-const input={
-width:"100%",
-padding:"10px",
-marginTop:"10px"
-};
+heading:{
+textAlign:"center",
+marginBottom:"20px",
+color:"#1e3a8a"
+},
 
-const btn={
-marginTop:"15px",
-padding:"10px",
-width:"100%",
-background:"#0b3d91",
+form:{
+display:"flex",
+flexDirection:"column",
+gap:"15px"
+},
+
+input:{
+padding:"12px",
+borderRadius:"6px",
+border:"1px solid #ccc",
+fontSize:"15px"
+},
+
+button:{
+background:"#1e3a8a",
 color:"white",
-border:"none"
+border:"none",
+padding:"12px",
+borderRadius:"6px",
+fontSize:"16px",
+cursor:"pointer"
+}
+
 };

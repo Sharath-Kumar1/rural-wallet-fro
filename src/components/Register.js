@@ -6,25 +6,31 @@ export default function Register(){
 
 const navigate = useNavigate();
 
-const [name,setName]=useState("");
-const [email,setEmail]=useState("");
-const [password,setPassword]=useState("");
-const [pin,setPin]=useState("");
+const [username,setUsername] = useState("");
+const [email,setEmail] = useState("");
+const [password,setPassword] = useState("");
+const [pin,setPin] = useState("");
 
-const register = async()=>{
+const handleSubmit = async(e)=>{
+
+e.preventDefault();
 
 try{
 
-await API.post("/auth/register",{name,email,password,pin});
+const res = await API.post("/auth/register",{
+username,
+email,
+password,
+pin
+});
 
-alert("Account Created Successfully");
+alert("Registration successful\nUserID: "+res.data.userId);
 
 navigate("/login");
 
-}
-catch(err){
+}catch{
 
-alert(err.response?.data || "Register Failed");
+alert("Registration failed");
 
 }
 
@@ -32,41 +38,52 @@ alert(err.response?.data || "Register Failed");
 
 return(
 
-<div style={page}>
+<div style={styles.page}>
 
-<div style={card}>
+<h1 style={styles.title}>🏦 Rural Wallet</h1>
 
-<h2>Create Account</h2>
+<div style={styles.card}>
+
+<h2 style={styles.heading}>Create Account</h2>
+
+<form onSubmit={handleSubmit} style={styles.form}>
 
 <input
-placeholder="Name"
-onChange={(e)=>setName(e.target.value)}
-style={input}
+placeholder="Enter Username"
+value={username}
+onChange={(e)=>setUsername(e.target.value)}
+style={styles.input}
 />
 
 <input
-placeholder="Email"
+type="email"
+placeholder="Enter Email"
+value={email}
 onChange={(e)=>setEmail(e.target.value)}
-style={input}
+style={styles.input}
 />
 
 <input
 type="password"
-placeholder="Password"
+placeholder="Enter Password"
+value={password}
 onChange={(e)=>setPassword(e.target.value)}
-style={input}
+style={styles.input}
 />
 
 <input
 type="password"
-placeholder="PIN"
+placeholder="Create PIN"
+value={pin}
 onChange={(e)=>setPin(e.target.value)}
-style={input}
+style={styles.input}
 />
 
-<button style={btn} onClick={register}>
+<button style={styles.button}>
 Register
 </button>
+
+</form>
 
 </div>
 
@@ -76,34 +93,60 @@ Register
 
 }
 
-const page={
-height:"90vh",
-display:"flex",
-justifyContent:"center",
-alignItems:"center",
-backgroundImage:"url(https://images.unsplash.com/photo-1601597111158-2fceff292cdc)",
-backgroundSize:"cover",
-backgroundPosition:"center"
-};
+/* ---------- Styles ---------- */
 
-const card={
-background:"rgba(255,255,255,0.95)",
+const styles={
+
+page:{
+height:"100vh",
+display:"flex",
+flexDirection:"column",
+alignItems:"center",
+justifyContent:"center",
+background:"#f4f6fb",
+fontFamily:"Arial"
+},
+
+title:{
+color:"#1e3a8a",
+marginBottom:"20px"
+},
+
+card:{
+background:"white",
 padding:"40px",
 borderRadius:"10px",
-width:"320px"
-};
+width:"350px",
+boxShadow:"0px 6px 20px rgba(0,0,0,0.15)"
+},
 
-const input={
-width:"100%",
-padding:"10px",
-marginTop:"10px"
-};
+heading:{
+textAlign:"center",
+marginBottom:"20px",
+color:"#1e3a8a"
+},
 
-const btn={
-marginTop:"15px",
-padding:"10px",
-width:"100%",
-background:"#0b3d91",
+form:{
+display:"flex",
+flexDirection:"column",
+gap:"15px"
+},
+
+input:{
+padding:"12px",
+borderRadius:"6px",
+border:"1px solid #ccc",
+fontSize:"15px"
+},
+
+button:{
+background:"#1e3a8a",
 color:"white",
-border:"none"
+border:"none",
+padding:"12px",
+borderRadius:"6px",
+fontSize:"16px",
+cursor:"pointer"
+}
+
 };

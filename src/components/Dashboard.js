@@ -3,191 +3,149 @@ import API from "../api";
 
 export default function Dashboard(){
 
+const userId = localStorage.getItem("userId");
+
 const [balance,setBalance] = useState(0);
 const [amount,setAmount] = useState("");
 const [pin,setPin] = useState("");
 const [history,setHistory] = useState([]);
-const [receipt,setReceipt] = useState(null);
-
-const token = localStorage.getItem("token");
-const userId = localStorage.getItem("userId");
-
-const headers = {headers:{Authorization:token}};
 
 useEffect(()=>{
 loadBalance();
 loadHistory();
 },[]);
 
+/* ---------- Load Balance ---------- */
 
-/* LOAD BALANCE */
-
-const loadBalance = async()=>{
-
+const loadBalance = async ()=>{
 try{
-
-const res = await API.get(`/wallet/balance/${userId}`,headers);
+const res = await API.get("/wallet/balance/"+userId);
 setBalance(res.data.balance);
-
+}catch(err){
+console.log(err);
 }
-catch{
-console.log("Balance error");
-}
-
 };
 
+/* ---------- Load History ---------- */
 
-/* LOAD HISTORY */
-
-const loadHistory = async()=>{
-
+const loadHistory = async ()=>{
 try{
-
-const res = await API.get(`/wallet/history/${userId}`,headers);
+const res = await API.get("/wallet/history/"+userId);
 setHistory(res.data);
-
+}catch(err){
+console.log(err);
 }
-catch{
-console.log("History error");
-}
-
 };
 
+/* ---------- Deposit ---------- */
 
-/* DEPOSIT */
+const deposit = async ()=>{
 
-const deposit = async()=>{
+if(!amount || !pin){
+alert("Enter amount and PIN");
+return;
+}
 
 try{
 
-await API.post(
-"/wallet/transaction",
-{
+const res = await API.post("/wallet/transaction",{
 userId,
-type:"deposit",
-amount:Number(amount),
+amount,
 pin
-},
-headers
-);
+});
 
-alert("Deposit Successful");
+alert(res.data.message);
+
+setBalance(res.data.balance);
 
 setAmount("");
 setPin("");
 
-loadBalance();
 loadHistory();
 
-}
-catch(err){
+}catch(err){
 
-alert(err.response?.data || "Transaction Failed");
+alert(err.response?.data?.message || "Server error");
 
 }
 
 };
 
+/* ---------- Generate Receipt ---------- */
 
-/* VIEW RECEIPT */
+const generateReceipt = (t)=>{
 
-const viewReceipt=(txn)=>{
-
-const text=`
-RURAL WALLET RECEIPT
-
+return `
+Rural Wallet Receipt
+---------------------------
 User ID : ${userId}
-
-Transaction : ${txn.type}
-
-Amount : ₹${txn.amount}
-
-Date : ${new Date(txn.date).toLocaleString()}
+Type    : ${t.type}
+Amount  : ₹${t.amount}
+Date    : ${t.date}
+---------------------------
+Thank you for using Rural Wallet
 `;
 
-setReceipt(text);
-
 };
 
+/* ---------- Download Receipt ---------- */
 
-/* DOWNLOAD RECEIPT */
+const downloadReceipt = (t)=>{
 
-const downloadReceipt=()=>{
+const receipt = generateReceipt(t);
 
-const blob=new Blob([receipt],{type:"text/plain"});
-const link=document.createElement("a");
+const blob = new Blob([receipt],{type:"text/plain"});
 
-link.href=URL.createObjectURL(blob);
-link.download="receipt.txt";
+const link = document.createElement("a");
+
+link.href = URL.createObjectURL(blob);
+
+link.download = "receipt.txt";
+
 link.click();
 
 };
 
+/* ---------- View Receipt ---------- */
+
+const viewReceipt = (t)=>{
+
+alert(generateReceipt(t));
+
+};
 
 return(
 
-<div style={page}>
+<div style={styles.page}>
 
-{/* HEADER */}
+<h1 style={styles.title}>🏦 Rural Wallet</h1>
 
-<div style={header}>
+<div style={styles.card}>
 
-<span style={{fontSize:"40px"}}>🏦</span>
+<h3>User ID: {userId}</h3>
 
-<h2>Rural Wallet Dashboard</h2>
+<h2 style={styles.balance}>Balance: ₹{balance}</h2>
 
-</div>
-
-
-{/* USER ID + BALANCE + DEPOSIT */}
-
-<div style={topContainer}>
-
-
-{/* USER ID */}
-
-<div style={card}>
-
-<h3>User ID</h3>
-
-<p style={{fontSize:"18px"}}>{userId}</p>
-
-</div>
-
-
-{/* BALANCE */}
-
-<div style={card}>
-
-<h3>Balance</h3>
-
-<h2>₹{balance}</h2>
-
-</div>
-
-
-{/* DEPOSIT */}
-
-<div style={depositBox}>
+<div style={styles.depositBox}>
 
 <h3>Deposit Money</h3>
 
 <input
+style={styles.input}
 placeholder="Enter Amount"
 value={amount}
 onChange={(e)=>setAmount(e.target.value)}
-style={input}
 />
 
 <input
+style={styles.input}
 type="password"
 placeholder="Enter PIN"
 value={pin}
 onChange={(e)=>setPin(e.target.value)}
-style={input}
 />
 
-<button style={btn} onClick={deposit}>
+<button style={styles.button} onClick={deposit}>
 Deposit
 </button>
 
@@ -195,80 +153,61 @@ Deposit
 
 </div>
 
-
-{/* HISTORY */}
-
 <h3 style={{marginTop:"40px"}}>Transaction History</h3>
 
-<table style={table}>
+<table style={styles.table}>
 
 <thead>
-
 <tr>
-
 <th>Type</th>
 <th>Amount</th>
 <th>Date</th>
 <th>Receipt</th>
-
 </tr>
-
 </thead>
 
 <tbody>
 
-{history.map((txn,i)=>(
+{history.length===0 ? (
 
+<tr>
+<td colSpan="4">No Transactions Yet</td>
+</tr>
+
+) : (
+
+history.map((t,i)=>(
 <tr key={i}>
-
-<td>{txn.type}</td>
-
-<td>₹{txn.amount}</td>
-
-<td>{new Date(txn.date).toLocaleString()}</td>
+<td>{t.type}</td>
+<td>₹{t.amount}</td>
+<td>{t.date}</td>
 
 <td>
 
-<button style={viewBtn} onClick={()=>viewReceipt(txn)}>
+<button
+style={styles.viewBtn}
+onClick={()=>viewReceipt(t)}
+>
 View
+</button>
+
+<button
+style={styles.downloadBtn}
+onClick={()=>downloadReceipt(t)}
+>
+Download
 </button>
 
 </td>
 
 </tr>
+))
 
-))}
+)}
 
 </tbody>
 
 </table>
-
-
-{/* RECEIPT POPUP */}
-
-{receipt && (
-
-<div style={popupBg}>
-
-<div style={popupBox}>
-
-<h3>Transaction Receipt</h3>
-
-<pre>{receipt}</pre>
-
-<button style={downloadBtn} onClick={downloadReceipt}>
-Download
-</button>
-
-<button style={closeBtn} onClick={()=>setReceipt(null)}>
-Close
-</button>
-
-</div>
-
-</div>
-
-)}
 
 </div>
 
@@ -276,110 +215,87 @@ Close
 
 }
 
+/* ---------- Styles ---------- */
 
-/* STYLES */
+const styles={
 
-const page={
-padding:"40px",
-background:"#eef3f9",
+page:{
 minHeight:"100vh",
-textAlign:"center"
-};
+background:"#f5f7fb",
+padding:"40px",
+textAlign:"center",
+fontFamily:"Arial"
+},
 
-const header={
-display:"flex",
-justifyContent:"center",
-alignItems:"center",
-gap:"10px",
+title:{
+color:"#1e3a8a",
 marginBottom:"30px"
-};
+},
 
-const topContainer={
-display:"flex",
-justifyContent:"center",
-gap:"30px",
-flexWrap:"wrap"
-};
-
-const card={
+card:{
 background:"white",
-padding:"25px",
-borderRadius:"10px",
-width:"200px",
-boxShadow:"0 4px 10px rgba(0,0,0,0.1)"
-};
-
-const depositBox={
-background:"white",
-padding:"25px",
-borderRadius:"10px",
-width:"300px",
-boxShadow:"0 4px 10px rgba(0,0,0,0.1)"
-};
-
-const input={
-width:"100%",
-padding:"10px",
-marginTop:"10px"
-};
-
-const btn={
-marginTop:"15px",
-padding:"10px",
-width:"100%",
-background:"#0b3d91",
-color:"white",
-border:"none",
-cursor:"pointer"
-};
-
-const table={
-width:"100%",
-marginTop:"20px",
-background:"white",
-borderCollapse:"collapse"
-};
-
-const viewBtn={
-padding:"6px 12px",
-background:"#28a745",
-color:"white",
-border:"none",
-cursor:"pointer"
-};
-
-const popupBg={
-position:"fixed",
-top:0,
-left:0,
-width:"100%",
-height:"100%",
-background:"rgba(0,0,0,0.6)",
-display:"flex",
-justifyContent:"center",
-alignItems:"center"
-};
-
-const popupBox={
-background:"white",
+width:"400px",
+margin:"auto",
 padding:"30px",
 borderRadius:"10px",
-width:"350px"
-};
+boxShadow:"0px 5px 20px rgba(0,0,0,0.15)"
+},
 
-const downloadBtn={
-padding:"8px 15px",
-background:"#0b3d91",
+balance:{
+color:"#16a34a",
+margin:"10px 0"
+},
+
+depositBox:{
+marginTop:"20px",
+display:"flex",
+flexDirection:"column",
+gap:"15px"
+},
+
+input:{
+padding:"12px",
+borderRadius:"6px",
+border:"1px solid #ccc",
+fontSize:"15px"
+},
+
+button:{
+background:"#1e3a8a",
 color:"white",
 border:"none",
+padding:"12px",
+borderRadius:"6px",
 cursor:"pointer",
-marginRight:"10px"
-};
+fontSize:"16px"
+},
 
-const closeBtn={
-padding:"8px 15px",
-background:"red",
+table:{
+margin:"auto",
+marginTop:"20px",
+borderCollapse:"collapse",
+width:"70%",
+background:"white",
+boxShadow:"0px 5px 15px rgba(0,0,0,0.1)"
+},
+
+viewBtn:{
+background:"#2563eb",
 color:"white",
 border:"none",
+padding:"6px 10px",
+marginRight:"5px",
+borderRadius:"4px",
 cursor:"pointer"
+},
+
+downloadBtn:{
+background:"#16a34a",
+color:"white",
+border:"none",
+padding:"6px 10px",
+borderRadius:"4px",
+cursor:"pointer"
+}
+
 };
